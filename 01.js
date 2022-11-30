@@ -9,7 +9,6 @@ function countReducer(state, action) {
       throw new Error(`Unsupported action type: ${action.type}`)
     }
   }
-  
 }
 
 function Counter({initialCount = 0, step = 1}) {
