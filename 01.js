@@ -1,20 +1,13 @@
 import * as React from 'react'
 
-/*function countReducer(state, newState) {
-  return newState
-}*/
-
-//const countReducer = (state, action) => ({...state, 
-  //...(typeof action === 'function' ? action(state) : action)})
-
 function countReducer(state, action) {
   switch (action.type) {
     case "INCREMENT":{
       return {count: state.count + 1};
     }
-  
-    default:
-      throw new Error(`Unexpected action type: ${action.type}`)
+    default: { 
+      throw new Error(`Unsupported action type: ${action.type}`)
+    }
   }
   
 }
@@ -24,7 +17,7 @@ function Counter({initialCount = 0, step = 1}) {
     count: initialCount,
   })
   const {count} = state
-  const increment = () => dispatch({type: 'INREMENT', step}) 
+  const increment = () => dispatch({type: 'INCREMENT', step}) 
   return <button onClick={increment}>{count}</button>
 } 
 
