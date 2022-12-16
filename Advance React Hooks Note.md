@@ -1,4 +1,4 @@
-### 01.useReducer
+##### 01.useReducer
 
 Call useReducer at the top level of your component to manage state with a reducer.
 
@@ -35,7 +35,7 @@ function handleClick() {
 Note:
 useReducer is very similar to useState, but it lets you move the state update logic from event handlers into a single function outside of your component.
 
-### 02.Memoization and React
+##### 02.Memoization and React
 
 Memoization has to do with caching. Here's a super simple implementation of memoization:
 
@@ -48,11 +48,7 @@ function addTwo(input) {
     return cache[input]
 }
 ```
-The basic idea is: hang on to the input and their associated output and return that output again if called with the same input.
-
-The point is to avoid re-calculating a value for which you already have the result cached. In our case, we're avoiding "input + 2" 
-
-## Output
+# Output
 ```javascript
 
 addTwo(3) // 5
@@ -61,7 +57,110 @@ addTwo(3) // 5, but this time we got it from the cache
 // I'll show up when we've memoized something
 
 ```
-useCallback
+The basic idea of caching is: 
+======> hang on to the input and their associated output and return that output again if called with the same input.
 
-React has three APIs for memoization: memo, useMemo, and useCallback. The caching strategy React has adopted has a size of 1. That is, they only keep around the most recent value of the input and result. There are various reasons for this decision, but it satisfies the primary use case for memoizing in a React context
+The point is to avoid re-calculating a value for which you already have the result cached. In our case, we're avoiding "input + 2" 
+React's memoization
+React has three APIs for memoization: memo, useMemo, and useCallback. The caching strategy React has adopted has a size of 1. That is, they only keep around the most recent value of the input and result.
+
+### React's memoization
+
+React has three APIs for memoization: `memo`, `useMemo`, and `useCallback`. The caching strategy React has adopted has a size of 1. That is, they only keep around the most recent value of the input and result.
+
+So for React's memoization it's more like this:
+
+```javascript
+
+let prevInput, prevResult
+function addTwo(input) {
+  if (input !== prevInput) {
+    prevResult = input + 2
+  }
+  prevInput = input
+  return prevResult
+}
+
+```
+# OUTPUT
+```javascript
+
+addTwo(3) // 5 is computed
+addTwo(3) // 5 is returned from the cache
+addTwo(2) // 4 is computed
+addTwo(3) // 5 is computed
+
+```
+To be clear, in React's case it's not a !== comparing the prevInput. It checks equality of each prop and each dependency individually. Let's check each one:
+
+
+## Using `memo`
+
+```javascript
+
+// React.memo's `prevInput` is props and `prevResult` is react elements (JSX)
+const MemoComp = React.memo(Comp)
+
+// then, when you render it:
+<MemoComp prop1="a" prop2="b" /> // renders new elements
+
+// rerender it with the same props:
+<MemoComp prop1="a" prop2="b" /> // renders previous elements
+
+// rerender it again but with different props:
+<MemoComp prop1="a" prop2="c" /> // renders new elements
+
+// rerender it again with the same props as at first:
+<MemoComp prop1="a" prop2="b" /> // renders new elements
+
+```
+
+
+## Using `useMemo`
+
+```javascript
+
+// React.useMemo's `prevInput` is the dependency array
+// and `prevResult` is whatever your function returns
+const posts = React.useMemo(() => getPosts(searchTerm), [searchTerm])
+// initial render with searchTerm = 'puppies':
+// - getPosts is called
+// - posts is a new array of posts
+
+// rerender with searchTerm = 'puppies':
+// - getPosts is *not* called
+// - posts is the same as last time
+
+// rerender with searchTerm = 'cats':
+// - getPosts is called
+// - posts is a new array of posts
+
+// rerender render with searchTerm = 'puppies' (again):
+// - getPosts is called
+// - posts is a new array of posts
+
+```
+
+
+## Using `useCallback`
+
+```javascript
+
+// React.useCallback's `prevInput` is the dependency array
+// and `prevResult` is the function
+const launch = React.useCallback(() => launchCandy({type, distance}), [
+  type,
+  distance,
+])
+// initial render with type = 'twix' and distance = '15m':
+// - launch is equal to the callback passed to useCallback this render
+// rerender with type = 'twix' and distance = '15m':
+// - launch is equal to the callback passed to useCallback last render 
+// rerender with same type = 'twix' and distance '20m':
+// - launch is equal to the callback passed to useCallback this render
+// rerender with type = 'twix' and distance = '15m':
+// - launch is equal to the callback passed to useCallback this render
+
+```
+
 
