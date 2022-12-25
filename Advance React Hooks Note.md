@@ -154,13 +154,85 @@ const launch = React.useCallback(() => launchCandy({type, distance}), [
 ])
 // initial render with type = 'twix' and distance = '15m':
 // - launch is equal to the callback passed to useCallback this render
+
 // rerender with type = 'twix' and distance = '15m':
 // - launch is equal to the callback passed to useCallback last render 
+
 // rerender with same type = 'twix' and distance '20m':
 // - launch is equal to the callback passed to useCallback this render
+
 // rerender with type = 'twix' and distance = '15m':
 // - launch is equal to the callback passed to useCallback this render
 
 ```
 
+## useEffect list of dependency
+the dependency list of `useEffect`:
 
+```javascript
+React.useEffect(() => {
+  window.localStorage.setItem('count', count)
+}, [count]) // <-- that's the dependency list
+```
+
+# function as list of dependency
+
+using the dependency function inside the `useEffect` hook will make it updatable but it will make the `useEffect` ruin every render.
+ This is because `updateLocalStorage` is defined inside the component
+function body. So it's re-initialized every render. Which means it's brand new
+every render. Which means it changes every render. Which means our `useEffect` callback will be called every render!
+
+```javascript
+const updateLocalStorage = () => window.localStorage.setItem('count', count)
+React.useEffect(() => {
+  updateLocalStorage()
+}, [updateLocalStorage]) // <-- function as a dependency
+```
+
+**This is the problem `useCallback` solves**. And here's how you solve it
+
+```javascript
+const updateLocalStorage = React.useCallback(
+  () => window.localStorage.setItem('count', count),
+  [count], // <-- yup! That's a dependency list!
+)
+React.useEffect(() => {
+  updateLocalStorage()
+}, [updateLocalStorage])
+```
+==> What that does is we pass React a function and React gives that same function back to us
+
+==> this is not how React actually implements this function. We're just imagining!
+```javascript
+
+let lastCallback
+function useCallback(callback, deps) {
+  if (depsChanged(deps)) {
+    lastCallback = callback
+    return callback
+  } else {
+    return lastCallback
+  }
+}
+```
+
+So while we still create a new function every render (to pass to `useCallback`),
+React only gives us the new one if the dependency list changes.
+
+In this exercise, we're going to be using `useCallback`, but `useCallback` is
+just a shortcut to using `useMemo` for functions:
+
+```typescript
+// the useMemo version:
+const updateLocalStorage = React.useMemo(
+  // useCallback saves us from this annoying double-arrow function thing:
+  () => () => window.localStorage.setItem('count', count),
+  [count],
+)
+
+// the useCallback version
+const updateLocalStorage = React.useCallback(
+  () => window.localStorage.setItem('count', count),
+  [count],
+)
+```
