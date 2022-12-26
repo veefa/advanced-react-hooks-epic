@@ -118,6 +118,8 @@ const MemoComp = React.memo(Comp)
 
 ## Using `useMemo`
 
+`useMemo` is similar to `useCallback` except it allows you to apply memoization to any value type (not just functions). It does this by accepting a function which returns the value and then that function is only called when the value needs to be retrieved (which typically will only happen once each time an element in the dependencies array changes between renders
+
 ```javascript
 
 // React.useMemo's `prevInput` is the dependency array
@@ -167,6 +169,7 @@ const launch = React.useCallback(() => launchCandy({type, distance}), [
 ```
 
 ## useEffect list of dependency
+
 the dependency list of `useEffect`:
 
 ```javascript
