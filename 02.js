@@ -10,7 +10,6 @@ import {
   PokemonErrorBoundary,
 } from '../pokemon'
 
-// 🐨 this is going to be our generic asyncReducer pokemonInfoReducer
 function asyncReducer(state, action) {
   switch (action.type) {
     case 'pending': {
@@ -27,19 +26,21 @@ function asyncReducer(state, action) {
     }
   }
 }
+
 function useAsync(asyncCallback, initialState, dependencies) {
+  
   const [state, dispatch] = React.useReducer(asyncReducer, {
     status: 'idle',
     data: null,
     error: null,
-    ...initialState,
+    ...initialState  //=> to override the initainles and the default value
   })
 
   React.useEffect(() => {
-    const promise = asyncCallback()
-    if (!promise) {
-      return
-    }
+     const promise = asyncCallback()
+     if (!promise) {
+       return
+     }
     dispatch({type: 'pending'})
     promise.then(
       data => {
@@ -49,24 +50,21 @@ function useAsync(asyncCallback, initialState, dependencies) {
         dispatch({type: 'rejected', error})
       },
     )
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, dependencies)
-
   return state
 }
 
 function PokemonInfo({pokemonName}) {
-  const state = useAsync(
-    () => {
-      if (!pokemonName) {
-        return
-      }
-      return fetchPokemon(pokemonName)
-    },
-    {status: pokemonName ? 'pending' : 'idle'},
-    [pokemonName],
-  )
 
-  const {data: pokemon, status, error} = state
+ const state = useAsync(() => {
+   if (!pokemonName) {
+      return
+     }
+     return fetchPokemon(pokemonName)
+   }, {/* initial state */}, [pokemonName])
+  const {data, status, error} = state
+
   switch (status) {
     case 'idle':
       return <span>Submit a pokemon</span>
@@ -75,7 +73,7 @@ function PokemonInfo({pokemonName}) {
     case 'rejected':
       throw error
     case 'resolved':
-      return <PokemonDataView pokemon={pokemon} />
+      return <PokemonDataView pokemon={data} />
     default:
       throw new Error('This should be impossible')
   }
