@@ -27,7 +27,7 @@ function asyncReducer(state, action) {
   }
 }
 
-function useAsync(asyncCallback, initialState, dependencies) {
+function useAsync(asyncCallback, initialState) {
   
   const [state, dispatch] = React.useReducer(asyncReducer, {
     status: 'idle',
@@ -36,11 +36,9 @@ function useAsync(asyncCallback, initialState, dependencies) {
     ...initialState  //=> to override the initainles and the default value
   })
 
-  React.useEffect(() => {
-     const promise = asyncCallback()
-     if (!promise) {
-       return
-     }
+  const {data, error, status} = state
+
+  const run = React.useCallback(promise => {
     dispatch({type: 'pending'})
     promise.then(
       data => {
@@ -50,20 +48,32 @@ function useAsync(asyncCallback, initialState, dependencies) {
         dispatch({type: 'rejected', error})
       },
     )
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, dependencies)
-  return state
+  }, [])
+
+  return {
+    error,
+    status,
+    data,
+    run,
+  }
 }
 
 function PokemonInfo({pokemonName}) {
+  const {
+    data: pokemon,
+    status,
+    error,
+    run,
+  } = useAsync({
+    status: pokemonName ? 'pending' : 'idle',
+  })
 
- const state = useAsync(() => {
-   if (!pokemonName) {
+  React.useEffect(() => {
+    if (!pokemonName) {
       return
-     }
-     return fetchPokemon(pokemonName)
-   }, {/* initial state */}, [pokemonName])
-  const {data, status, error} = state
+    }
+    run(fetchPokemon(pokemonName))
+  }, [pokemonName, run])
 
   switch (status) {
     case 'idle':
@@ -73,7 +83,7 @@ function PokemonInfo({pokemonName}) {
     case 'rejected':
       throw error
     case 'resolved':
-      return <PokemonDataView pokemon={data} />
+      return <PokemonDataView pokemon={pokemon} />
     default:
       throw new Error('This should be impossible')
   }
