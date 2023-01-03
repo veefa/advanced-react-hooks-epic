@@ -239,3 +239,7 @@ const updateLocalStorage = React.useCallback(
   [count],
 )
 ```
+
+# The ESLint plugin
+the React ESLint Plugin is a powerful tool that can help you write clean, maintainable, and error-free React code.
+And is a plugin for the popular JavaScript linting tool ESLint that enables it to understand and lint React code. It provides a set of rules specifically tailored for React code, as well as JSX syntax, to help enforce best practices and catch common mistakes in your React code.

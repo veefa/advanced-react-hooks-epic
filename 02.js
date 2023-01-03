@@ -26,68 +26,55 @@ function asyncReducer(state, action) {
     }
   }
 }
-
-function useAsync(asyncCallback, initialState) {
-  
+function useAsync(initialState) {
   const [state, dispatch] = React.useReducer(asyncReducer, {
     status: 'idle',
     data: null,
     error: null,
-    ...initialState  //=> to override the initainles and the default value
+    ...initialState,
   })
+    const {data, error, status} = state;
 
-  const {data, error, status} = state
-
-  const run = React.useCallback(promise => {
-    dispatch({type: 'pending'})
-    promise.then(
-      data => {
-        dispatch({type: 'resolved', data})
-      },
-      error => {
-        dispatch({type: 'rejected', error})
-      },
-    )
-  }, [])
-
-  return {
-    error,
-    status,
-    data,
-    run,
+    const run = React.useCallback(promise => {
+       dispatch({type: 'pending'})
+       promise.then(
+         data => {
+           dispatch({type: 'resolved', data})
+         },
+         error => {
+           dispatch({type: 'rejected', error})
+         },
+       )
+     }, [])
+     
+    return {error, status, data, run}
   }
-}
+  
+  function PokemonInfo({pokemonName}) {
+    const {data: pokemon, status, error, run} = useAsync({ status: pokemonName ? 'pending' : 'idle' })
 
-function PokemonInfo({pokemonName}) {
-  const {
-    data: pokemon,
-    status,
-    error,
-    run,
-  } = useAsync({
-    status: pokemonName ? 'pending' : 'idle',
-  })
-
-  React.useEffect(() => {
-    if (!pokemonName) {
-      return
+    React.useEffect(() => {
+      if (!pokemonName) {
+        return
+      }
+      const pokemonPromise = fetchPokemon(pokemonName)
+      run(pokemonPromise)
+    }, [pokemonName, run])
+    
+    switch (status) {
+      case 'idle':
+        return <span>Submit a pokemon</span>
+      case 'pending':
+        return <PokemonInfoFallback name={pokemonName} />
+      case 'rejected':
+        throw error
+      case 'resolved':
+        return <PokemonDataView pokemon={pokemon} />
+      default:
+        throw new Error('This should be impossible')
     }
-    run(fetchPokemon(pokemonName))
-  }, [pokemonName, run])
-
-  switch (status) {
-    case 'idle':
-      return <span>Submit a pokemon</span>
-    case 'pending':
-      return <PokemonInfoFallback name={pokemonName} />
-    case 'rejected':
-      throw error
-    case 'resolved':
-      return <PokemonDataView pokemon={pokemon} />
-    default:
-      throw new Error('This should be impossible')
   }
-}
+  
 
 function App() {
   const [pokemonName, setPokemonName] = React.useState('')
