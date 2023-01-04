@@ -1,5 +1,5 @@
-// useCallback: custom hooks
-// http://localhost:3000/isolated/exercise/02.js
+// useContext: Caching response data in context
+// 💯 caching in a context provider (exercise)
 
 import * as React from 'react'
 import {
@@ -9,90 +9,94 @@ import {
   PokemonInfoFallback,
   PokemonErrorBoundary,
 } from '../pokemon'
+import {useAsync} from '../utils'
 
-function asyncReducer(state, action) {
+// 🐨 Create a PokemonCacheContext
+
+// 🐨 create a PokemonCacheProvider function
+// 🐨 useReducer with pokemonCacheReducer in your PokemonCacheProvider
+// 💰 you can grab the one that's in PokemonInfo
+// 🐨 return your context provider with the value assigned to what you get back from useReducer
+// 💰 value={[cache, dispatch]}
+// 💰 make sure you forward the props.children!
+
+function pokemonCacheReducer(state, action) {
   switch (action.type) {
-    case 'pending': {
-      return {status: 'pending', data: null, error: null}
-    }
-    case 'resolved': {
-      return {status: 'resolved', data: action.data, error: null}
-    }
-    case 'rejected': {
-      return {status: 'rejected', data: null, error: action.error}
+    case 'ADD_POKEMON': {
+      return {...state, [action.pokemonName]: action.pokemonData}
     }
     default: {
       throw new Error(`Unhandled action type: ${action.type}`)
     }
   }
 }
-function useAsync(initialState) {
-  const [state, dispatch] = React.useReducer(asyncReducer, {
-    status: 'idle',
-    data: null,
-    error: null,
-    ...initialState,
-  })
-    const {data, error, status} = state;
 
-    const run = React.useCallback(promise => {
-       dispatch({type: 'pending'})
-       promise.then(
-         data => {
-           dispatch({type: 'resolved', data})
-         },
-         error => {
-           dispatch({type: 'rejected', error})
-         },
-       )
-     }, [])
-     
-    return {error, status, data, run}
-  }
-  
-  function PokemonInfo({pokemonName}) {
-    const {data: pokemon, status, error, run} = useAsync({ status: pokemonName ? 'pending' : 'idle' })
+function PokemonInfo({pokemonName}) {
+  // 💣 remove the useReducer here (or move it up to your PokemonCacheProvider)
+  const [cache, dispatch] = React.useReducer(pokemonCacheReducer, {})
+  // 🐨 get the cache and dispatch from useContext with PokemonCacheContext
 
-    React.useEffect(() => {
-      if (!pokemonName) {
-        return
-      }
-      const pokemonPromise = fetchPokemon(pokemonName)
-      run(pokemonPromise)
-    }, [pokemonName, run])
-    
-    switch (status) {
-      case 'idle':
-        return <span>Submit a pokemon</span>
-      case 'pending':
-        return <PokemonInfoFallback name={pokemonName} />
-      case 'rejected':
-        throw error
-      case 'resolved':
-        return <PokemonDataView pokemon={pokemon} />
-      default:
-        throw new Error('This should be impossible')
+  const {data: pokemon, status, error, run, setData} = useAsync()
+
+  React.useEffect(() => {
+    if (!pokemonName) {
+      return
+    } else if (cache[pokemonName]) {
+      setData(cache[pokemonName])
+    } else {
+      run(
+        fetchPokemon(pokemonName).then(pokemonData => {
+          dispatch({type: 'ADD_POKEMON', pokemonName, pokemonData})
+          return pokemonData
+        }),
+      )
     }
+  }, [cache, pokemonName, run, setData])
+
+  if (status === 'idle') {
+    return 'Submit a pokemon'
+  } else if (status === 'pending') {
+    return <PokemonInfoFallback name={pokemonName} />
+  } else if (status === 'rejected') {
+    throw error
+  } else if (status === 'resolved') {
+    return <PokemonDataView pokemon={pokemon} />
   }
-  
+}
 
-function App() {
-  const [pokemonName, setPokemonName] = React.useState('')
-
-  function handleSubmit(newPokemonName) {
-    setPokemonName(newPokemonName)
-  }
-
-  function handleReset() {
-    setPokemonName('')
-  }
-
+function PreviousPokemon({onSelect}) {
+  // 🐨 get the cache from useContext with PokemonCacheContext
+  const cache = {}
   return (
-    <div className="pokemon-info-app">
-      <PokemonForm pokemonName={pokemonName} onSubmit={handleSubmit} />
-      <hr />
-      <div className="pokemon-info">
-        <PokemonErrorBoundary onReset={handleReset} resetKeys={[pokemonName]}>
+    <div>
+      Previous Pokemon
+      <ul style={{listStyle: 'none', paddingLeft: 0}}>
+        {Object.keys(cache).map(pokemonName => (
+          <li key={pokemonName} style={{margin: '4px auto'}}>
+            <button
+              style={{width: '100%'}}
+              onClick={() => onSelect(pokemonName)}
+            >
+              {pokemonName}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+function PokemonSection({onSelect, pokemonName}) {
+  // 🐨 wrap this in the PokemonCacheProvider so the PreviousPokemon
+  // and PokemonInfo components have access to that context.
+  return (
+    <div style={{display: 'flex'}}>
+      <PreviousPokemon onSelect={onSelect} />
+      <div className="pokemon-info" style={{marginLeft: 10}}>
+        <PokemonErrorBoundary
+          onReset={() => onSelect('')}
+          resetKeys={[pokemonName]}
+        >
           <PokemonInfo pokemonName={pokemonName} />
         </PokemonErrorBoundary>
       </div>
@@ -100,22 +104,24 @@ function App() {
   )
 }
 
-function AppWithUnmountCheckbox() {
-  const [mountApp, setMountApp] = React.useState(true)
+function App() {
+  const [pokemonName, setPokemonName] = React.useState(null)
+
+  function handleSubmit(newPokemonName) {
+    setPokemonName(newPokemonName)
+  }
+
+  function handleSelect(newPokemonName) {
+    setPokemonName(newPokemonName)
+  }
+
   return (
-    <div>
-      <label>
-        <input
-          type="checkbox"
-          checked={mountApp}
-          onChange={e => setMountApp(e.target.checked)}
-        />{' '}
-        Mount Component
-      </label>
+    <div className="pokemon-info-app">
+      <PokemonForm pokemonName={pokemonName} onSubmit={handleSubmit} />
       <hr />
-      {mountApp ? <App /> : null}
+      <PokemonSection onSelect={handleSelect} pokemonName={pokemonName} />
     </div>
   )
 }
 
-export default AppWithUnmountCheckbox
+export default App
