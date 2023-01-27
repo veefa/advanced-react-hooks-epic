@@ -243,3 +243,64 @@ const updateLocalStorage = React.useCallback(
 # The ESLint plugin
 the React ESLint Plugin is a powerful tool that can help you write clean, maintainable, and error-free React code.
 And is a plugin for the popular JavaScript linting tool ESLint that enables it to understand and lint React code. It provides a set of rules specifically tailored for React code, as well as JSX syntax, to help enforce best practices and catch common mistakes in your React code.
+
+##### 03. useContext
+
+## Lifting state up
+Prop drilling, also known as "prop-tunnelling", refers to the process of passing props from a parent component down to a child component through multiple intermediate components, even though the child component may not need all of the props that are passed down.
+This can lead to a lot of unnecessary props being passed down the component tree, making it harder to understand what props are actually being used and where they are coming from.
+Prop drilling can make the codebase more complex and harder to maintain. To avoid prop drilling, state can be `lifted up `to a common ancestor component, and then passed down to the necessary child components as props. This way, the components that don't need certain props don't have to receive them.
+`Lifting state up`in React refers to a technique for sharing state between multiple components in a React application. In this technique, state is moved from a child component to a common ancestor component, allowing the child components to access and update the state via props. This helps to keep the state in a centralized location, making it easier to manage and update, while also reducing the need for props drilling
+
+# To lift state up in React, you can follow these steps:
+
+1- Identify the state that needs to be shared between multiple components.
+
+2- Find the nearest common ancestor component of the components that need to share the state.
+
+3- In the common ancestor component, create a state object and set the initial state.
+
+4- Pass down the state as props to the child components that need to access it.
+
+5- In the child components, use the props passed down from the ancestor component to access and update the state.
+
+6- In the child components, use setState() method to update the state.
+
+7- To avoid prop drilling pass the callback function that updates the state as a prop to the child component
+
+8- Use the callback function in the child component to update the state in the parent component
+
+# Example:
+
+```javascript
+Copy code
+class ParentComponent extends React.Component {
+  state = {
+    sharedState: 'Initial State'
+  }
+
+  handleChange = (newState) => {
+    this.setState({ sharedState: newState });
+  }
+
+  render() {
+    return (
+      <ChildComponent sharedState={this.state.sharedState} handleChange={this.handleChange} />
+    );
+  }
+}
+
+class ChildComponent extends React.Component {
+  handleClick = () => {
+    this.props.handleChange('New State');
+  }
+
+  render() {
+    return (
+      <button onClick={this.handleClick}>
+        {this.props.sharedState}
+      </button>
+    );
+  }
+}
+```
