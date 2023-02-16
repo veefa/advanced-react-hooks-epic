@@ -331,3 +331,13 @@ function ChildComponent() {
 }
 
 ```
+
+##### 04. useLayoutEffect
+
+`useLayoutEffect` is a React Hook that is similar to the useEffect Hook, but it runs synchronously after all DOM mutations. The purpose of `useLayoutEffect` is to perform side effects that involve the DOM, such as measuring an element's size or position, updating a DOM node's attributes, or adding event listeners.
+
+# SUMMARY:
+`useLayoutEffect`: If you need to mutate the DOM and/or do need to perform measurements
+`useEffect`: If you don't need to interact with the DOM at all or your DOM changes are unobservable (seriously, most of the time you should use this).
+
+##### 05. useImperativeHandle
