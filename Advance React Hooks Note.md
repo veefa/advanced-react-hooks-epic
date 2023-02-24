@@ -341,3 +341,45 @@ function ChildComponent() {
 `useEffect`: If you don't need to interact with the DOM at all or your DOM changes are unobservable (seriously, most of the time you should use this).
 
 ##### 05. useImperativeHandle
+
+# using React.forwardRef
+
+``` javascript 
+
+import React from 'react';
+
+const MyComponent = React.forwardRef((props, ref) => {
+  // Your component logic here...
+  return <div ref={ref}>Hello, World!</div>;
+});
+
+export default MyComponent;
+
+```
+In this example, MyComponent is a function component that has been wrapped in React.forwardRef. The function receives two arguments: props and ref. The props argument is an object containing all the props passed to the component, while the ref argument is a special prop that allows you to pass a ref to the component.
+
+By using React.forwardRef, you can forward the ref to a child component or DOM element, which can be useful in cases where you need to imperatively access or manipulate the child element. In this example, we're simply attaching the ref to the div element, but you can use it in any way you like within your component logic.
+
+##### 06. useDebugValue: useMedia
+
+`useDebugValue` is a React Hook that can be used to display custom labels for custom hooks in React DevTools. It accepts two arguments: a value and an optional formatter function.
+
+Here's an example of how you might use `useDebugValue`:
+``` javascript 
+
+import { useDebugValue, useState } from 'react';
+
+function useMyCustomHook(initialValue) {
+  const [value, setValue] = useState(initialValue);
+
+  // Use `useDebugValue` to label the value in DevTools
+  useDebugValue(value, (value) => `My Custom Hook: ${value}`);
+
+  function setValueAndLabel(newValue) {
+    setValue(newValue);
+  }
+
+  return [value, setValueAndLabel];
+}
+
+```
